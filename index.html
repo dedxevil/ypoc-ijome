@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Copy emojis easily with our emoji picker. Browse thousands of emojis by category and copy with a single click. Free emoji copy and paste tool.">
+    <meta name="keywords"
+        content="emoji, emoji copy, emoji picker, copy paste emoji, emoji keyboard, emoji categories, emoji list, emoji search, emoticons, smileys, unicode emoji, emoji finder, emoji meanings, emoji dictionary, emoji copy paste, emoji symbols, emoji characters, emoji app, emoji tool, emoji website, emoji clipboard, emoji collection, emoji database, emoji reference, emoji cheat sheet">
+    <meta name="author" content="17x.in">
+    <meta property="og:title" content="Emoji Copy - Copy Emojis with One Click">
+    <meta property="og:description"
+        content="Browse and copy thousands of emojis organized by category with a single click. Free emoji copy and paste tool.">
+    <meta property="og:type" content="website">
+    <meta name="robots" content="index, follow">
+    <title>Emoji Copy - Copy Emojis with One Click</title>
+    <!-- Favicon -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>😉</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1280px;
+            /* 7xl in Tailwind */
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .content-wrapper {
+            flex: 1 0 auto;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .emoji {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .emoji:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .emoji.copied {
+            background-color: #4ade80;
+            color: white;
+            animation: pulse 0.5s;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .category-btn {
+            transition: all 0.3s ease;
+        }
+
+        .category-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-bar {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-bar:focus {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        #notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 50px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .category-container {
+            scrollbar-width: thin;
+            scrollbar-color: #764ba2 #f5f7fa;
+        }
+
+        .category-container::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .category-container::-webkit-scrollbar-track {
+            background: #f5f7fa;
+            border-radius: 10px;
+        }
+
+        .category-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        footer {
+            width: 100%;
+            border-radius: 0 0 1rem 1rem;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+    <div class="main-container">
+        <div class="content-wrapper bg-white rounded-t-2xl shadow-lg overflow-hidden">
+            <!-- Header -->
+            <header class="bg-gradient-to-r from-purple-600 to-blue-500 text-white p-6 md:p-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-bold mb-2">Emoji Copy</h1>
+                        <p class="text-purple-100">Click any emoji to copy it to your clipboard</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 w-full md:w-auto">
+                        <input type="text" id="searchInput" placeholder="Search emojis..."
+                            class="search-bar w-full md:w-80 px-4 py-3 rounded-full text-gray-700 focus:outline-none">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Categories -->
+            <div class="category-container overflow-x-auto p-4 bg-gray-50 border-b border-gray-200">
+                <div class="flex space-x-3 min-w-max">
+                    <button class="category-btn active px-5 py-2 rounded-full text-sm font-medium"
+                        data-category="all">All</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="smileys">Smileys & Emotion</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="people">People & Body</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="animals">Animals & Nature</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="food">Food & Drink</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="travel">Travel & Places</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="activities">Activities</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="objects">Objects</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="symbols">Symbols</button>
+                    <button class="category-btn px-5 py-2 rounded-full text-sm font-medium bg-white shadow-sm"
+                        data-category="flags">Flags</button>
+                </div>
+            </div>
+
+            <!-- Emoji Grid -->
+            <div class="p-6">
+                <h2 id="categoryTitle" class="text-2xl font-bold mb-6 text-gray-800">All Emojis</h2>
+                <div id="emojiGrid"
+                    class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
+                    <!-- Emojis will be populated here -->
+                </div>
+            </div>
+
+            <!-- Recently Copied Section -->
+            <div class="p-6 bg-gray-50 border-t border-gray-200">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Recently Copied</h3>
+                <div id="recentlyCopied" class="flex flex-wrap gap-3">
+                    <!-- Recently copied emojis will appear here -->
+                    <div class="text-gray-400 italic">No emojis copied yet</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white p-4 text-center rounded-b-2xl shadow-lg">
+
+            <p>© <span id="currentYear"></span> <a href="https://17x.in" target="_blank" rel="noopener noreferrer">17x
+                    Studio</a> - Click to copy any emoji to your clipboard</p>
+            <p class="text-gray-400 text-sm mt-2">Made with 💩 by <a href="https://17x.in" target="_blank"
+                    rel="noopener noreferrer">17x Studio</a> for emoji lovers</p>
+
+        </footer>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification">Emoji copied to clipboard! 👍</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set current year in footer
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            // Emoji data by category
+            const emojiData = {
+                smileys: [
+                    { emoji: "😀", description: "Grinning Face" },
+                    { emoji: "😃", description: "Grinning Face with Big Eyes" },
+                    { emoji: "😄", description: "Grinning Face with Smiling Eyes" },
+                    { emoji: "😁", description: "Beaming Face with Smiling Eyes" },
+                    { emoji: "😆", description: "Grinning Squinting Face" },
+                    { emoji: "😅", description: "Grinning Face with Sweat" },
+                    { emoji: "🤣", description: "Rolling on the Floor Laughing" },
+                    { emoji: "😂", description: "Face with Tears of Joy" },
+                    { emoji: "🙂", description: "Slightly Smiling Face" },
+                    { emoji: "🙃", description: "Upside-Down Face" },
+                    { emoji: "😉", description: "Winking Face" },
+                    { emoji: "😊", description: "Smiling Face with Smiling Eyes" },
+                    { emoji: "😇", description: "Smiling Face with Halo" },
+                    { emoji: "😍", description: "Smiling Face with Heart-Eyes" },
+                    { emoji: "🥰", description: "Smiling Face with Hearts" },
+                    { emoji: "😘", description: "Face Blowing a Kiss" },
+                    { emoji: "😗", description: "Kissing Face" },
+                    { emoji: "😚", description: "Kissing Face with Closed Eyes" },
+                    { emoji: "😙", description: "Kissing Face with Smiling Eyes" },
+                    { emoji: "😋", description: "Face Savoring Food" }
+                ],
+                people: [
+                    { emoji: "👋", description: "Waving Hand" },
+                    { emoji: "🤚", description: "Raised Back of Hand" },
+                    { emoji: "🖐️", description: "Hand with Fingers Splayed" },
+                    { emoji: "✋", description: "Raised Hand" },
+                    { emoji: "🖖", description: "Vulcan Salute" },
+                    { emoji: "👌", description: "OK Hand" },
+                    { emoji: "🤌", description: "Pinched Fingers" },
+                    { emoji: "🤏", description: "Pinching Hand" },
+                    { emoji: "✌️", description: "Victory Hand" },
+                    { emoji: "🤞", description: "Crossed Fingers" },
+                    { emoji: "🤟", description: "Love-You Gesture" },
+                    { emoji: "🤘", description: "Sign of the Horns" },
+                    { emoji: "🤙", description: "Call Me Hand" },
+                    { emoji: "👈", description: "Backhand Index Pointing Left" },
+                    { emoji: "👉", description: "Backhand Index Pointing Right" },
+                    { emoji: "👆", description: "Backhand Index Pointing Up" },
+                    { emoji: "👇", description: "Backhand Index Pointing Down" },
+                    { emoji: "👍", description: "Thumbs Up" },
+                    { emoji: "👎", description: "Thumbs Down" },
+                    { emoji: "👊", description: "Oncoming Fist" }
+                ],
+                animals: [
+                    { emoji: "🐶", description: "Dog Face" },
+                    { emoji: "🐱", description: "Cat Face" },
+                    { emoji: "🐭", description: "Mouse Face" },
+                    { emoji: "🐹", description: "Hamster Face" },
+                    { emoji: "🐰", description: "Rabbit Face" },
+                    { emoji: "🦊", description: "Fox Face" },
+                    { emoji: "🐻", description: "Bear Face" },
+                    { emoji: "🐼", description: "Panda Face" },
+                    { emoji: "🐨", description: "Koala Face" },
+                    { emoji: "🐯", description: "Tiger Face" },
+                    { emoji: "🦁", description: "Lion Face" },
+                    { emoji: "🐮", description: "Cow Face" },
+                    { emoji: "🐷", description: "Pig Face" },
+                    { emoji: "🐸", description: "Frog Face" },
+                    { emoji: "🐵", description: "Monkey Face" },
+                    { emoji: "🐔", description: "Chicken" },
+                    { emoji: "🐧", description: "Penguin" },
+                    { emoji: "🐦", description: "Bird" },
+                    { emoji: "🐤", description: "Baby Chick" },
+                    { emoji: "🦄", description: "Unicorn" }
+                ],
+                food: [
+                    { emoji: "🍎", description: "Red Apple" },
+                    { emoji: "🍐", description: "Pear" },
+                    { emoji: "🍊", description: "Tangerine" },
+                    { emoji: "🍋", description: "Lemon" },
+                    { emoji: "🍌", description: "Banana" },
+                    { emoji: "🍉", description: "Watermelon" },
+                    { emoji: "🍇", description: "Grapes" },
+                    { emoji: "🍓", description: "Strawberry" },
+                    { emoji: "🍈", description: "Melon" },
+                    { emoji: "🍒", description: "Cherries" },
+                    { emoji: "🍑", description: "Peach" },
+                    { emoji: "🥭", description: "Mango" },
+                    { emoji: "🍍", description: "Pineapple" },
+                    { emoji: "🥥", description: "Coconut" },
+                    { emoji: "🥝", description: "Kiwi Fruit" },
+                    { emoji: "🍅", description: "Tomato" },
+                    { emoji: "🍆", description: "Eggplant" },
+                    { emoji: "🥑", description: "Avocado" },
+                    { emoji: "🌮", description: "Taco" },
+                    { emoji: "🍕", description: "Pizza" }
+                ],
+                travel: [
+                    { emoji: "🚗", description: "Car" },
+                    { emoji: "🚕", description: "Taxi" },
+                    { emoji: "🚙", description: "Sport Utility Vehicle" },
+                    { emoji: "🚌", description: "Bus" },
+                    { emoji: "🚎", description: "Trolleybus" },
+                    { emoji: "🏎️", description: "Racing Car" },
+                    { emoji: "🚓", description: "Police Car" },
+                    { emoji: "🚑", description: "Ambulance" },
+                    { emoji: "🚒", description: "Fire Engine" },
+                    { emoji: "🚚", description: "Delivery Truck" },
+                    { emoji: "🚛", description: "Articulated Lorry" },
+                    { emoji: "🚜", description: "Tractor" },
+                    { emoji: "🛴", description: "Kick Scooter" },
+                    { emoji: "🚲", description: "Bicycle" },
+                    { emoji: "🛵", description: "Motor Scooter" },
+                    { emoji: "🏍️", description: "Motorcycle" },
+                    { emoji: "✈️", description: "Airplane" },
+                    { emoji: "🚀", description: "Rocket" },
+                    { emoji: "🛸", description: "Flying Saucer" },
+                    { emoji: "🚁", description: "Helicopter" }
+                ],
+                activities: [
+                    { emoji: "⚽", description: "Soccer Ball" },
+                    { emoji: "🏀", description: "Basketball" },
+                    { emoji: "🏈", description: "American Football" },
+                    { emoji: "⚾", description: "Baseball" },
+                    { emoji: "🥎", description: "Softball" },
+                    { emoji: "🎾", description: "Tennis" },
+                    { emoji: "🏐", description: "Volleyball" },
+                    { emoji: "🏉", description: "Rugby Football" },
+                    { emoji: "🥏", description: "Flying Disc" },
+                    { emoji: "🎱", description: "Pool 8 Ball" },
+                    { emoji: "🪀", description: "Yo-Yo" },
+                    { emoji: "🏓", description: "Ping Pong" },
+                    { emoji: "🏸", description: "Badminton" },
+                    { emoji: "🏒", description: "Ice Hockey" },
+                    { emoji: "🏑", description: "Field Hockey" },
+                    { emoji: "🥍", description: "Lacrosse" },
+                    { emoji: "🏏", description: "Cricket Game" },
+                    { emoji: "🎯", description: "Direct Hit" },
+                    { emoji: "🎮", description: "Video Game" },
+                    { emoji: "🎨", description: "Artist Palette" }
+                ],
+                objects: [
+                    { emoji: "⌚", description: "Watch" },
+                    { emoji: "📱", description: "Mobile Phone" },
+                    { emoji: "💻", description: "Laptop" },
+                    { emoji: "⌨️", description: "Keyboard" },
+                    { emoji: "🖥️", description: "Desktop Computer" },
+                    { emoji: "🖨️", description: "Printer" },
+                    { emoji: "🖱️", description: "Computer Mouse" },
+                    { emoji: "🖲️", description: "Trackball" },
+                    { emoji: "📷", description: "Camera" },
+                    { emoji: "📸", description: "Camera with Flash" },
+                    { emoji: "📹", description: "Video Camera" },
+                    { emoji: "🎥", description: "Movie Camera" },
+                    { emoji: "📽️", description: "Film Projector" },
+                    { emoji: "🎞️", description: "Film Frames" },
+                    { emoji: "📞", description: "Telephone Receiver" },
+                    { emoji: "☎️", description: "Telephone" },
+                    { emoji: "📟", description: "Pager" },
+                    { emoji: "📠", description: "Fax Machine" },
+                    { emoji: "📺", description: "Television" },
+                    { emoji: "📻", description: "Radio" }
+                ],
+                symbols: [
+                    { emoji: "❤️", description: "Red Heart" },
+                    { emoji: "🧡", description: "Orange Heart" },
+                    { emoji: "💛", description: "Yellow Heart" },
+                    { emoji: "💚", description: "Green Heart" },
+                    { emoji: "💙", description: "Blue Heart" },
+                    { emoji: "💜", description: "Purple Heart" },
+                    { emoji: "🖤", description: "Black Heart" },
+                    { emoji: "🤍", description: "White Heart" },
+                    { emoji: "🤎", description: "Brown Heart" },
+                    { emoji: "💔", description: "Broken Heart" },
+                    { emoji: "❣️", description: "Heart Exclamation" },
+                    { emoji: "💕", description: "Two Hearts" },
+                    { emoji: "💞", description: "Revolving Hearts" },
+                    { emoji: "💓", description: "Beating Heart" },
+                    { emoji: "💗", description: "Growing Heart" },
+                    { emoji: "💖", description: "Sparkling Heart" },
+                    { emoji: "💘", description: "Heart with Arrow" },
+                    { emoji: "💝", description: "Heart with Ribbon" },
+                    { emoji: "💟", description: "Heart Decoration" },
+                    { emoji: "☮️", description: "Peace Symbol" }
+                ],
+                flags: [
+                    { emoji: "🏁", description: "Chequered Flag" },
+                    { emoji: "🚩", description: "Triangular Flag" },
+                    { emoji: "🎌", description: "Crossed Flags" },
+                    { emoji: "🏴", description: "Black Flag" },
+                    { emoji: "🏳️", description: "White Flag" },
+                    { emoji: "🏳️‍🌈", description: "Rainbow Flag" },
+                    { emoji: "🏳️‍⚧️", description: "Transgender Flag" },
+                    { emoji: "🏴‍☠️", description: "Pirate Flag" },
+                    { emoji: "🇺🇳", description: "United Nations" },
+                    { emoji: "🇦🇫", description: "Afghanistan" },
+                    { emoji: "🇦🇽", description: "Åland Islands" },
+                    { emoji: "🇦🇱", description: "Albania" },
+                    { emoji: "🇩🇿", description: "Algeria" },
+                    { emoji: "🇦🇸", description: "American Samoa" },
+                    { emoji: "🇦🇩", description: "Andorra" },
+                    { emoji: "🇦🇴", description: "Angola" },
+                    { emoji: "🇦🇮", description: "Anguilla" },
+                    { emoji: "🇦🇶", description: "Antarctica" },
+                    { emoji: "🇦🇬", description: "Antigua & Barbuda" },
+                    { emoji: "🇦🇷", description: "Argentina" }
+                ]
+            };
+
+            // Combine all emojis for "All" category
+            emojiData.all = [
+                ...emojiData.smileys,
+                ...emojiData.people,
+                ...emojiData.animals,
+                ...emojiData.food,
+                ...emojiData.travel,
+                ...emojiData.activities,
+                ...emojiData.objects,
+                ...emojiData.symbols,
+                ...emojiData.flags
+            ];
+
+            const emojiGrid = document.getElementById('emojiGrid');
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            const categoryTitle = document.getElementById('categoryTitle');
+            const searchInput = document.getElementById('searchInput');
+            const notification = document.getElementById('notification');
+            const recentlyCopied = document.getElementById('recentlyCopied');
+
+            let currentCategory = 'all';
+            let recentEmojis = [];
+
+            // Load recently copied emojis from local storage
+            function loadRecentEmojis() {
+                const savedEmojis = localStorage.getItem('recentEmojis');
+                if (savedEmojis) {
+                    try {
+                        recentEmojis = JSON.parse(savedEmojis);
+                        updateRecentlyCopiedDisplay();
+                    } catch (e) {
+                        console.error('Error loading recent emojis from local storage:', e);
+                        localStorage.removeItem('recentEmojis');
+                    }
+                }
+            }
+
+            // Save recently copied emojis to local storage
+            function saveRecentEmojis() {
+                try {
+                    localStorage.setItem('recentEmojis', JSON.stringify(recentEmojis));
+                } catch (e) {
+                    console.error('Error saving recent emojis to local storage:', e);
+                }
+            }
+
+            // Display emojis based on category
+            function displayEmojis(category, searchTerm = '') {
+                emojiGrid.innerHTML = '';
+
+                let emojisToDisplay = emojiData[category] || [];
+
+                // Filter by search term if provided
+                if (searchTerm) {
+                    searchTerm = searchTerm.toLowerCase();
+                    emojisToDisplay = emojisToDisplay.filter(item =>
+                        item.description.toLowerCase().includes(searchTerm) ||
+                        item.emoji.includes(searchTerm)
+                    );
+                }
+
+                if (emojisToDisplay.length === 0) {
+                    emojiGrid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500">No emojis found matching your search</div>';
+                    return;
+                }
+
+                emojisToDisplay.forEach(item => {
+                    const emojiElement = document.createElement('div');
+                    emojiElement.className = 'emoji';
+                    emojiElement.setAttribute('title', item.description);
+                    emojiElement.setAttribute('data-emoji', item.emoji);
+                    emojiElement.textContent = item.emoji;
+
+                    emojiElement.addEventListener('click', () => {
+                        copyToClipboard(item.emoji, item.description);
+
+                        // Add visual feedback
+                        emojiElement.classList.add('copied');
+                        setTimeout(() => {
+                            emojiElement.classList.remove('copied');
+                        }, 500);
+
+                        // Add to recently copied
+                        addToRecentlyCopied(item);
+                    });
+
+                    emojiGrid.appendChild(emojiElement);
+                });
+            }
+
+            // Copy emoji to clipboard
+            function copyToClipboard(emoji, description) {
+                navigator.clipboard.writeText(emoji).then(() => {
+                    showNotification(`${emoji} copied to clipboard!`);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    showNotification('Failed to copy emoji');
+                });
+            }
+
+            // Show notification
+            function showNotification(message) {
+                notification.textContent = message;
+                notification.style.opacity = '1';
+
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                }, 2000);
+            }
+
+            // Add to recently copied section
+            function addToRecentlyCopied(item) {
+                // Check if emoji is already in recent list
+                const existingIndex = recentEmojis.findIndex(e => e.emoji === item.emoji);
+                if (existingIndex !== -1) {
+                    recentEmojis.splice(existingIndex, 1);
+                }
+
+                // Add to beginning of array
+                recentEmojis.unshift(item);
+
+                // Keep only the last 10 emojis
+                if (recentEmojis.length > 10) {
+                    recentEmojis.pop();
+                }
+
+                updateRecentlyCopiedDisplay();
+                saveRecentEmojis();
+            }
+
+            // Update recently copied display
+            function updateRecentlyCopiedDisplay() {
+                recentlyCopied.innerHTML = '';
+
+                if (recentEmojis.length === 0) {
+                    recentlyCopied.innerHTML = '<div class="text-gray-400 italic">No emojis copied yet</div>';
+                    return;
+                }
+
+                recentEmojis.forEach(item => {
+                    const emojiElement = document.createElement('div');
+                    emojiElement.className = 'emoji';
+                    emojiElement.setAttribute('title', item.description);
+                    emojiElement.textContent = item.emoji;
+
+                    emojiElement.addEventListener('click', () => {
+                        copyToClipboard(item.emoji, item.description);
+                        emojiElement.classList.add('copied');
+                        setTimeout(() => {
+                            emojiElement.classList.remove('copied');
+                        }, 500);
+                    });
+
+                    recentlyCopied.appendChild(emojiElement);
+                });
+            }
+
+            // Initialize with all emojis
+            displayEmojis('all');
+
+            // Load recently copied emojis from local storage
+            loadRecentEmojis();
+
+            // Category button click handlers
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const category = button.getAttribute('data-category');
+
+                    // Update active button
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    // Update category and display
+                    currentCategory = category;
+                    categoryTitle.textContent = button.textContent + ' Emojis';
+                    displayEmojis(category, searchInput.value);
+                });
+            });
+
+            // Search functionality
+            searchInput.addEventListener('input', () => {
+                displayEmojis(currentCategory, searchInput.value);
+            });
+        });
+    </script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'94228af92028c181',t:'MTc0NzY0NjY4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+</body>
+
+</html>
